@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>图片压缩</title>
+		<style>
+			img {
+				max-width: 200px;
+				margin-right: 10px;
+				margin-top: 20px;
+			}
+		</style>
+	</head>
+	<body>
+		<!-- 文件选择框 -->
+		<input type="file" id="fileInput" accept="image/*" />
+		<!-- 触发压缩的按钮 -->
+		<button class="compressButton">开始压缩</button>
+		<input
+			type="number"
+			placeholder=""
+			id="qualityInput"
+			max="1"
+			min="0"
+			step="0.1"
+			value="0.8"
+		/>
+		<span>请输入压缩比例0~1</span>
+		<script>
+			// JavaScript 代码将在下文中介绍
+			// 获取 base64 图片的大小
+			const getBase64ImageSize = (base64String) => {
+				// 计算 base64 字符串的长度
+				const len = base64String.length;
+				// 每个 base64 字符所占用的字节数，Base64 编码中每个字符占用 6 位，即 3 字节
+				// -   4 个 Base64 字符 = 3 个原始字节
+				//-   1 个 Base64 字符 ≈ 0.75 个原始字节
+				const bytes = len * 0.75;
+				// 转换为 KB
+				const sizeInKB = bytes / 1024;
+				// 返回图片大小，保留两位小数
+				return sizeInKB.toFixed(2);
+			};
+			// 显示原始图片
+			const displayOriginalImage = (file) => {
+				if (!file) {
+					alert("请选择图片");
+					return;
+				}
+
+				const reader = new FileReader();
+				reader.onload = () => {
+					const div = document.createElement("div");
+					const img = document.createElement("img");
+					const span = document.createElement("span");
+					img.src = reader.result;
+					// console.log(reader.result);
+					// 显示图片大小
+					span.innerText = `原图大小：${getBase64ImageSize(reader.result)}KB`;
+
+					document.body.appendChild(div);
+					div.appendChild(img);
+					div.appendChild(span);
+				};
+				reader.readAsDataURL(file);
+			};
+			// 压缩图片
+			const compressImage = (file, quality = 0.8, success) => {
+				const reader = new FileReader();
+
+				// 读取文件后的回调函数
+				reader.onload = () => {
+					const img = new Image();
+
+					img.onload = () => {
+						const canvas = document.createElement("canvas");
+						const ctx = canvas.getContext("2d");
+
+						// 设置 canvas 的大小
+						canvas.width = img.width;
+						canvas.height = img.height;
+
+						// 在 canvas 上绘制图片
+						ctx.drawImage(img, 0, 0, img.width, img.height);
+
+						// 将 canvas 上的图像数据压缩为 base64 格式
+						const compressedDataURL = canvas.toDataURL("image/jpeg", quality);
+
+						// 调用成功回调函数，并传递压缩后的图片数据
+						success && success(compressedDataURL);
+					};
+
+					// 加载图片
+					img.src = reader.result;
+				};
+
+				// 读取文件为 DataURL
+				reader.readAsDataURL(file);
+			};
+			//获取button元素
+			let compressButton = document.querySelector(".compressButton");
+			//获取文件选择框元素
+			// 当点击按钮时触发压缩图片操作
+			compressButton.addEventListener("click", () => {
+				const file = fileInput.files[0];
+				console.log(quality, typeof quality);
+				compressImage(file, Number(quality), (imgBase64) => {
+					const div = document.createElement("div");
+					const img = document.createElement("img");
+					const span = document.createElement("span");
+					img.src = imgBase64;
+					span.innerText = `压缩后大小：${getBase64ImageSize(imgBase64)}KB`;
+
+					div.appendChild(img);
+					div.appendChild(span);
+					document.body.appendChild(div);
+				});
+			});
+			//预览原图
+			let fileInput = document.querySelector("#fileInput");
+			fileInput.addEventListener("change", () => {
+				displayOriginalImage(fileInput.files[0]);
+			});
+			let qualityInput = document.querySelector("#qualityInput");
+			var quality = qualityInput.value;
+			qualityInput.addEventListener("change", () => {
+				quality = qualityInput.value;
+			});
+		</script>
+	</body>
+</html>
